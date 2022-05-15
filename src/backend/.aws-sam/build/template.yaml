@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: backend
+Transform:
+- AWS::Serverless-2016-10-31
+Parameters:
+  TABLE_NAME:
+    Type: String
+    Description: The DynamoDB table for storing User PublicAddress and Nonce
+    Default: UserTable
+  REGION_NAME:
+    Type: String
+    Description: Default region for deployment.
+    Default: ap-northeast-2
+  AWS_ENV_NAME:
+    Type: String
+    Description: AWS Environment where code is being executed (AWS_SAM_LOCAL or AWS)
+    Default: AWS_SAM_LOCAL
+  DEV_ENV_NAME:
+    Type: String
+    Description: Developer environment where code is being executed (OSX, Windows
+      or Linux)
+    Default: OSX
+Resources:
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-all-items.getAllItemsHandler
+      Runtime: nodejs14.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get all items from
+        a DynamoDB table.
+      Policies: AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          SAMPLE_TABLE:
+            Ref: SampleTable
+          TABLE:
+            Ref: TABLE_NAME
+          REGION:
+            Ref: REGION_NAME
+          AWS_ENV:
+            Ref: AWS_ENV_NAME
+          DEV_ENV:
+            Ref: DEV_ENV_NAME
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+      CodeUri: getAllItemsFunction
+    Metadata:
+      SamResourceId: getAllItemsFunction
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-by-id.getByIdHandler
+      Runtime: nodejs14.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get one item by
+        id from a DynamoDB table.
+      Policies: AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          SAMPLE_TABLE:
+            Ref: SampleTable
+          TABLE:
+            Ref: TABLE_NAME
+          REGION:
+            Ref: REGION_NAME
+          AWS_ENV:
+            Ref: AWS_ENV_NAME
+          DEV_ENV:
+            Ref: DEV_ENV_NAME
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{id}
+            Method: GET
+      CodeUri: getByIdFunction
+    Metadata:
+      SamResourceId: getByIdFunction
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/put-item.putItemHandler
+      Runtime: nodejs14.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP post method to add one item to
+        a DynamoDB table.
+      Policies: AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          SAMPLE_TABLE:
+            Ref: SampleTable
+          TABLE:
+            Ref: TABLE_NAME
+          REGION:
+            Ref: REGION_NAME
+          AWS_ENV:
+            Ref: AWS_ENV_NAME
+          DEV_ENV:
+            Ref: DEV_ENV_NAME
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: POST
+      CodeUri: putItemFunction
+    Metadata:
+      SamResourceId: putItemFunction
+  handshakeUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/handshake-users.handshakeUsersHandler
+      Runtime: nodejs14.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP post method to add one item to
+        a DynamoDB table.
+      Policies: AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          TABLE:
+            Ref: TABLE_NAME
+          REGION:
+            Ref: REGION_NAME
+          AWS_ENV:
+            Ref: AWS_ENV_NAME
+          DEV_ENV:
+            Ref: DEV_ENV_NAME
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: GET
+      CodeUri: handshakeUsersFunction
+    Metadata:
+      SamResourceId: handshakeUsersFunction
+  SampleTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL for Prod stage
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/

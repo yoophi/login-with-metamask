@@ -1,9 +1,14 @@
-const tableName = process.env.SAMPLE_TABLE;
+const logdown = require("logdown");
+const { ulid } = require("ulid");
+const logger = logdown("handshake-user");
+logger.state.isEnabled = true;
+
+const tableName = process.env.TABLE;
 const region = process.env.REGION;
 const awsEnvironment = process.env.AWS_ENV;
 const devEnvironment = process.env.DEV_ENV;
 
-console.log({ tableName, region, awsEnvironment, devEnvironment });
+logger.log({ tableName, region, awsEnvironment, devEnvironment });
 
 if (awsEnvironment === "AWS_SAM_LOCAL") {
   const AWS = require("aws-sdk");
@@ -23,28 +28,51 @@ const docClient = new dynamodb.DocumentClient();
 /**
  * A simple example includes a HTTP get method to get all items from a DynamoDB table.
  */
-exports.getAllItemsHandler = async (event) => {
-  if (event.httpMethod !== "GET") {
-    throw new Error(
-      `getAllItems only accept GET method, you tried: ${event.httpMethod}`
-    );
-  }
+exports.handshakeUsersHandler = async (event) => {
   // All log statements are written to CloudWatch
-  console.info("received:", event);
+  logger.info("received:", JSON.stringify(event));
+  const publicAddress = event.queryStringParameters?.publicAddress;
+  logger.info(`publicAddress: ${publicAddress}`);
 
   // get all items from the table (only first 1MB data, you can use `LastEvaluatedKey` to get the rest of data)
   // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
   // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Scan.html
   var params = {
     TableName: tableName,
+    Key: { id: publicAddress },
   };
-  console.log({ params });
-  const data = await docClient.scan(params).promise();
-  const items = data.Items;
+  logger.log({ params });
+  const data = await docClient.get(params).promise();
+  const item = data.Item;
+
+  if (!item) {
+    try {
+      const data = {
+        id: ulid(),
+        publicAddress,
+        nonce: Math.floor(Math.random() * 10000),
+      };
+      const result = await docClient
+        .put({
+          TableName: tableName,
+          Item: data,
+        })
+        .promise();
+      return {
+        statusCode: 200,
+        body: JSON.stringify(data),
+      };
+    } catch (err) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ err }),
+      };
+    }
+  }
 
   const response = {
     statusCode: 200,
-    body: JSON.stringify(items),
+    body: JSON.stringify(item),
   };
 
   // All log statements are written to CloudWatch
