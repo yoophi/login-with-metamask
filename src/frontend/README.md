@@ -1,3 +1,20 @@
+# Login with MetaMask 
+
+## config override
+
+<https://github.com/ChainSafe/web3.js#web3-and-create-react-app>
+
+
+아래 문제를 해결하기 위한 `config-overrides.js` 파일이 적용되어 있음. (`create-react-app@5`에 포함된 `webpack@5`와 관련한 이슈)
+
+```
+buffer, Buffer 를 찾지 못하는 문제
+mjs 를 사용하는 모듈과 충돌하는 문제 (chakra-ui 와 함께 사용시, process/browser 를 찾지 못함)
+stream, crypto, http, https 연결되지 않는 문제 
+```
+
+----
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
